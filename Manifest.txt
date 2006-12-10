@@ -5,5 +5,7 @@ Rakefile
 setup.rb
 lib/objectiveflickr.rb
 lib/objectiveflickr/version.rb
+lib/objectiveflickr/flickr_invocation.rb
+lib/objectiveflickr/flickr_response.rb
 test/test_helper.rb
 test/objectiveflickr_test.rb

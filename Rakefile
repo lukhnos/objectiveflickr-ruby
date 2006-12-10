@@ -12,8 +12,8 @@ include FileUtils
 require File.join(File.dirname(__FILE__), 'lib', 'objectiveflickr', 'version')
 
 AUTHOR = "lukhnos"  # can also be an array of Authors
-EMAIL = "your contact email for bug fixes and info"
-DESCRIPTION = "description of gem"
+EMAIL = "lukhnos@gmail.com"
+DESCRIPTION = "objectiveflickr is a minimalistic Flickr API library that uses REST-style calls and receives JSON response blocks, resulting in very concise code. Named so in order to echo another Flickr library of mine, under the same name, developed for Objective-C."
 GEM_NAME = "objectiveflickr" # what ppl will type to install your gem
 RUBYFORGE_PROJECT = "objectiveflickr" # The unix name for your project
 HOMEPATH = "http://#{RUBYFORGE_PROJECT}.rubyforge.org"
@@ -22,7 +22,7 @@ RELEASE_TYPES = %w( gem ) # can use: gem, tar, zip
 
 NAME = "objectiveflickr"
 REV = nil # UNCOMMENT IF REQUIRED: File.read(".svn/entries")[/committed-rev="(d+)"/, 1] rescue nil
-VERS = ENV['VERSION'] || (Objectiveflickr::VERSION::STRING + (REV ? ".#{REV}" : ""))
+VERS = ENV['VERSION'] || (ObjectiveFlickr::VERSION::STRING + (REV ? ".#{REV}" : ""))
 CLEAN.include ['**/.*.sw?', '*.gem', '.config']
 RDOC_OPTS = ['--quiet', '--title', "objectiveflickr documentation",
     "--opname", "index.html",
@@ -41,6 +41,8 @@ hoe = Hoe.new(GEM_NAME, VERS) do |p|
   p.rubyforge_name = RUBYFORGE_PROJECT if RUBYFORGE_PROJECT
   p.test_globs = ["test/**/*_test.rb"]
   p.clean_globs = CLEAN  #An array of file patterns to delete on clean.
+  
+  p.extra_deps = ["json"]
   
   # == Optional
   #p.changes        - A description of the release's latest changes.
