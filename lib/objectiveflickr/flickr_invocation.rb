@@ -18,7 +18,10 @@ $KCODE = 'UTF8'
 
 # FlickrInvocation
 class FlickrInvocation
-  API_KEY = ''
+  @@default_api_key = ''
+  @@default_shared_secret = ''
+  @@default_options = {}
+  
   SHARED_SECRET = ''
   AUTH_ENDPOINT = 'http://flickr.com/services/auth/'
   REST_ENDPOINT = 'http://api.flickr.com/services/rest/'
@@ -27,16 +30,14 @@ class FlickrInvocation
   # Initializes the instance with the api_key (required) and an 
   # optional shared_secret (required only if you need to make 
   # authenticated call). Current available option is:
-  # * :exception_on_error: set this key to true if you want the
+  # * :raise_exception_on_error: set this key to true if you want the
   #   call method to raise an error if Flickr returns one
-  def initialize(api_key = nil, shared_secret = nil, options = {})
-    @api_key = api_key || API_KEY
-    @shared_secret = shared_secret || SHARED_SECRET
-    
-    # options
-    @option_exception_on_error = options[:exception_on_error] ? true : false
+  def initialize(api_key = nil, shared_secret = nil, options = nil)
+    @api_key = api_key || @@default_api_key
+    @shared_secret = shared_secret || @@default_shared_secret
+    @options = options || @@default_options    
   end
-  
+    
   # Invoke a Flickr method, pass :auth=>true in the param hash
   # if you want the method call to be signed (required when you
   # make authenticaed calls, e.g. flickr.auth.getFrob or 
@@ -45,8 +46,8 @@ class FlickrInvocation
     url = method_url(method, params)
     rsp = FlickrResponse.new Net::HTTP.get(URI.parse(url))
     
-    if @option_exception_on_error && rsp.error?
-      raise rsp.error_message
+    if @options[:raise_exception_on_error] && rsp.error?
+      raise RuntimeError, rsp
     end
     
     rsp
@@ -86,6 +87,20 @@ class FlickrInvocation
   def photo_info_from_div_id(params)
     p = params.split("-")
     { :server_id=>p[1], :id=>p[2], :secret=>p[3], :size=>p[4], :type=>p[5] }
+  end
+
+  # set the default API key
+  def self.default_api_key(k)
+    @@default_api_key=k
+  end
+  
+  # set the default shared secret
+  def self.default_shared_secret(s)
+    @@default_shared_secret=s
+  end
+  
+  def self.default_options(o)
+    @@default_options = o
   end
   
   private
