@@ -1,7 +1,9 @@
 2006-12-27 (0.9.2):
 	* Added support for Flickr's new "farm" part newly found in its photo URLs
+	
 	* Your code needs no change, everything will just work, including
-	  those photo URL/div id helpers
+	  those photo URL/div id helpers, but on the other hand...
+	  
 	* Deprecated methods in FlickrInvocation:
 
 	  * photo_url(params)
