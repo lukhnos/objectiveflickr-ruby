@@ -7,15 +7,15 @@
 # Copyright:: Copyright (c) 2006 Lukhnos D. Liu
 # License:: Distributed under the New BSD License
 
-# This class encapusulates Flickr's JSON response block. Error code
-# and error messsage are read from the response block. This class
-# is intended to be simple and minimalistic, since the data body
-# can be extracted very easily.
-
 require 'rubygems'
 require 'json'
 require 'jcode'
 $KCODE = 'UTF8'
+
+# This class encapusulates Flickr's JSON response block. Error code
+# and error messsage are read from the response block. This class
+# is intended to be simple and minimalistic, since the data body
+# can be extracted very easily.
 
 class FlickrResponse
   attr_reader :data

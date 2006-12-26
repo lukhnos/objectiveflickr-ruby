@@ -7,16 +7,16 @@
 # Copyright:: Copyright (c) 2006 Lukhnos D. Liu
 # License:: Distributed under the New BSD License
 
-# This class plays the major role of the package. Named "FlickrInvocation"
-# to allude to the making of an RPC call.
-
 require 'rubygems'
 require 'net/http'
 require 'jcode'
 require 'digest/md5'
+
 $KCODE = 'UTF8'
 
-# FlickrInvocation
+# This class plays the major role of the package. Named "FlickrInvocation"
+# to allude to the making of an RPC call.
+
 class FlickrInvocation
   @@default_api_key = ''
   @@default_shared_secret = ''
@@ -25,7 +25,6 @@ class FlickrInvocation
   SHARED_SECRET = ''
   AUTH_ENDPOINT = 'http://flickr.com/services/auth/'
   REST_ENDPOINT = 'http://api.flickr.com/services/rest/'
-  PHOTOURL_BASE = 'http://static.flickr.com/'
 
   # Initializes the instance with the api_key (required) and an 
   # optional shared_secret (required only if you need to make 
@@ -42,6 +41,10 @@ class FlickrInvocation
   # if you want the method call to be signed (required when you
   # make authenticaed calls, e.g. flickr.auth.getFrob or 
   # any method call that requires an auth token)
+  #
+  # NOTE: If you supply :auth_token in the params hash, your API
+  # call will automatically be signed, and the call will be 
+  # treated by Flickr as an authenticated call
   def call(method, params=nil)
     url = method_url(method, params)
     rsp = FlickrResponse.new Net::HTTP.get(URI.parse(url))
@@ -62,31 +65,24 @@ class FlickrInvocation
     url = "#{AUTH_ENDPOINT}?api_key=#{@api_key}&perms=#{permission}&api_sig=#{sig}"
   end
     
-  # This utility method returns the URL of a Flickr photo using
-  # the keys :server_id, :id, :secret, :size and :type
+  # DEPRECATED--Use FlickrPhoto.url_from_hash(params)
   def photo_url(params)
-    photo_url_form(photo_params(params))
-  end
-  
-  # This utility method combines the Flickr photo keys (from which
-  # one gets the real URL of a photo) into a photo id that you can
-  # use in a div
-  def photo_div_id(params, prefix='photo')
-    p = photo_params(params)
-    [prefix, p[:server_id], p[:id], p[:secret], p[:size], p[:type]].join("-")
-  end
-  
-  # This utility method breaks apart the photo id into Flickr photo
-  # keys and returns the photo URL
-  def photo_url_from_div_id(params)
-    photo_url(photo_info_from_div_id(params))
+    FlickrPhoto.url_from_hash(params)
   end
 
-  # This utility method breaks apart the photo id into Flickr photo
-  # keys and returns a hash of the photo information
-  def photo_info_from_div_id(params)
-    p = params.split("-")
-    { :server_id=>p[1], :id=>p[2], :secret=>p[3], :size=>p[4], :type=>p[5] }
+  # DEPRECATED--Use FlickrPhoto.unique_id_from_hash(params, prefix)
+  def photo_div_id(params, prefix='photo')
+    FlickrPhoto.unique_id_from_hash(params, prefix)
+  end
+
+  # DEPRECATED--Use FlickrPhoto.url_from_unique_id(uid)
+  def photo_url_from_div_id(uid)
+    FlickrPhoto.url_from_unique_id(uid)
+  end
+
+  # DEPRECATED--Use FlickrPhoto.hash_from_unique_id(uid)
+  def photo_info_from_div_id(uid)
+    FlickrPhoto.hash_from_unique_id(uid)
   end
 
   # set the default API key
@@ -98,7 +94,8 @@ class FlickrInvocation
   def self.default_shared_secret(s)
     @@default_shared_secret=s
   end
-  
+
+  # set the default options, e.g. :raise_exception_on_error=>true  
   def self.default_options(o)
     @@default_options = o
   end
@@ -111,7 +108,7 @@ class FlickrInvocation
     p[:nojsoncallback] = 1
     
     url = "#{REST_ENDPOINT}?api_key=#{@api_key}&method=#{method}"
-    if p[:auth] || p["auth"]
+    if p[:auth] || p["auth"] || p[:auth_token] || p["auth_token"]
       p.delete(:auth)
       p.delete("auth")
       sigp = p
@@ -125,35 +122,12 @@ class FlickrInvocation
   end
   
   private
-  def photo_url_form(p)
-    url = "#{PHOTOURL_BASE}#{p[:server_id]}/#{p[:id]}_#{p[:secret]}"
-    if p[:size].length > 0
-      url += "_#{p[:size]}"
-    end
-
-    url += ".#{p[:type]}"
-  end
-
-  private
-  def photo_params(params)
-    {
-      :server_id => params[:server] || params["server"] || params[:server_id] || params["server_id"] || "",
-      :id => params[:id] || params["id"] || "",
-      :secret => params[:secret] || params["secret"] || "",
-      :size => params[:size] || params["size"] || "",
-      :type => params[:type] || params["type"] || "jpg"
-    }
-  end
-
-  private
   def api_sig(params)
     sigstr = @shared_secret
-    params.keys.sort { |x, y| x.to_s <=> y.to_s }.each { |k|
+    params.keys.sort { |x, y| x.to_s <=> y.to_s }.each do |k|
       sigstr += k.to_s
       sigstr += params[k].to_s
-    }  
-    md5str = Digest::MD5.hexdigest(sigstr)
-    # print "sigstr=#{sigstr}, md5str=#{md5str}\n"
-    md5str
+    end
+    Digest::MD5.hexdigest(sigstr)
   end
 end

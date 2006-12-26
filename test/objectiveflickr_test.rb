@@ -1,4 +1,5 @@
 require File.dirname(__FILE__) + '/test_helper.rb'
+require 'yaml'
 
 class ObjectiveFlickrTest < Test::Unit::TestCase
 
@@ -38,4 +39,39 @@ class ObjectiveFlickrTest < Test::Unit::TestCase
     assert(e.message.error?, "response should be an error")
     assert_equal(e.message.error_message, "Invalid API Key (Key not found)", "error message should be 'invalid API key'")
   end
+  
+  def test_deprecated_photo_helpers    
+    f = FlickrInvocation.new
+    params = {:server=>1234, :id=>5678, :secret=>90, :farm=>321}
+    assert_equal(f.photo_url(params), "http://farm321.static.flickr.com/1234/5678_90.jpg", "URL helper failed")
+    uid = f.photo_div_id(params)
+    assert_equal(uid, "photo-1234-5678-90-321--jpg", "UID failed")
+  end
+  
+  def test_photo_helpers
+    params = {:server=>"1234", :id=>"5678", :secret=>"90" }
+        
+    assert_equal(FlickrPhoto.url_from_hash(params), "http://static.flickr.com/1234/5678_90.jpg", "URL helper failed")
+    params[:farm] = "321"
+    assert_equal(FlickrPhoto.url_from_hash(params), "http://farm321.static.flickr.com/1234/5678_90.jpg", "URL helper failed")
+    params[:farm] = nil
+    
+    uid = FlickrPhoto.unique_id_from_hash(params, 'blah')
+    assert_equal(uid, "blah-1234-5678-90---jpg", "UID failed")
+    
+    params[:farm] = "321"
+    params[:size] = 'b'
+    uid = FlickrPhoto.unique_id_from_hash(params, 'blah')
+    assert_equal(uid, "blah-1234-5678-90-321-b-jpg", "UID failed")
+
+    
+    assert_equal(FlickrPhoto.url_from_unique_id(uid), "http://farm321.static.flickr.com/1234/5678_90_b.jpg", "URL helper failed")    
+    
+    params[:type] = 'jpg'
+    h = FlickrPhoto.hash_from_unique_id(uid)
+    assert_equal(h, params, "hash_from_unique_id failed")
+
+  end 
+  
+  
 end
