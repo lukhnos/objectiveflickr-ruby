@@ -11,6 +11,7 @@ require 'rubygems'
 require 'net/http'
 require 'jcode'
 require 'digest/md5'
+require 'cgi'
 
 $KCODE = 'UTF8'
 
@@ -117,7 +118,7 @@ class FlickrInvocation
       p["api_sig"] = api_sig(sigp)
     end
     
-    p.keys.each { |k| url += "&#{k.to_s}=#{p[k]}" }
+    p.keys.each { |k| url += "&#{k.to_s}=#{CGI.escape(p[k].to_s)}" }
     url
   end
   

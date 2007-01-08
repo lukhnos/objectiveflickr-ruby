@@ -14,6 +14,16 @@
 
 module FlickrPhoto
   @photo_url_base = 'static.flickr.com'
+  @default_buddy_icon = 'http://www.flickr.com/images/buddyicon.jpg'
+  
+  # Helper that gets you the URL of the buddy icon of a given user
+  def self.buddy_icon_url(nsid, icon_server=nil, icon_farm=nil)
+    if !icon_server || icon_server.to_i == 0
+      return @default_buddy_icon
+    end
+    
+    "#{self.photo_url_base(icon_farm)}/#{icon_server}/buddyicons/#{nsid}.jpg"
+  end
 
   # Set the default photo base URL, without the http:// part
   def self.default_photo_url_base(b)
@@ -26,17 +36,18 @@ module FlickrPhoto
     self.url_from_normalized_hash(self.normalize_parameter(params))
   end
 
+
   # This utility method combines the Flickr photo keys (from which
   # one gets the real URL of a photo) into a photo id that you can
   # use in a div
-  def self.unique_id_from_hash(params, prefix='photo')
+  def self.element_id_from_hash(params, prefix='photo')
     p = self.normalize_parameter(params)
     [prefix, p[:server], p[:id], p[:secret], p[:farm], p[:size], p[:type]].join("-")    
   end
 
   # This utility method breaks apart the photo id into Flickr photo
   # keys and returns the photo URL  
-  def self.url_from_unique_id(uid)
+  def self.url_from_element_id(uid)
     self.url_from_normalized_hash(self.hash_from_unique_id(uid))
   end
 
@@ -44,7 +55,7 @@ module FlickrPhoto
   # keys and returns a hash of the photo information
   #
   # NOTE: No sanitation check here
-  def self.hash_from_unique_id(uid)      
+  def self.hash_from_element_id(uid)      
     p = uid.split("-")
     {
       :server=>p[1], :id=>p[2], :secret=>p[3],
@@ -52,10 +63,24 @@ module FlickrPhoto
     }
   end
 
+  # DEPRECATED--Call element_id_from_hash instead
+  def self.unique_id_from_hash(params, prefix='photo')
+    self.element_id_from_hash(params, prefix)
+  end
+
+  # DEPRECATED--Call url_from_element_id instead
+  def self.url_from_unique_id(uid)
+    self.url_from_element_id(uid)
+  end
+
+  # DEPRECATED--Call hash_from_element_id instead
+  def self.hash_from_unique_id(uid)
+    self.hash_from_element_id(uid)
+  end
+
   private
   def self.url_from_normalized_hash(p)
-    urlbase = (p[:farm] && p[:farm].to_s.length > 0) ? "http://farm#{p[:farm]}." : "http://"
-    url = "#{urlbase}#{@photo_url_base}/#{p[:server]}/#{p[:id]}_#{p[:secret]}"
+    url = "#{photo_url_base(p[:farm])}/#{p[:server]}/#{p[:id]}_#{p[:secret]}"
     url += "_#{p[:size]}" if p[:size].length > 0
     url += ".#{p[:type]}"
   end
@@ -70,6 +95,12 @@ module FlickrPhoto
       :size => (params[:size] || params["size"] || "").to_s,
       :type => (params[:type] || params["type"] || "jpg").to_s
     }
+  end
+  
+  private
+  def self.photo_url_base(farm_id=nil)
+    urlbase = (farm_id && farm_id.to_s.length > 0) ? "http://farm#{farm_id}." : "http://"
+    "#{urlbase}#{@photo_url_base}"
   end
 end
 

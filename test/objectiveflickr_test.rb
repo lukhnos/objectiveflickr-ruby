@@ -3,7 +3,10 @@ require 'yaml'
 
 class ObjectiveFlickrTest < Test::Unit::TestCase
 
+  TEST_API_KEY = 'bf67a649fffb210651334a09b92df02e'
+
   def setup
+    @f = FlickrInvocation.new(TEST_API_KEY)
   end
   
   def test_truth
@@ -12,11 +15,17 @@ class ObjectiveFlickrTest < Test::Unit::TestCase
   
   # we use a unit test API key for this purpose
   def test_echo
-    f = FlickrInvocation.new('bf67a649fffb210651334a09b92df02e')
-    r = f.call("flickr.test.echo")
+    r = @f.call("flickr.test.echo")
     assert(r.ok?, "response should be ok")
     assert_equal(r["method"]["_content"], "flickr.test.echo", "method name should echo")
   end
+  
+  def test_echo_escaped_characters
+    r = @f.call("flickr.test.echo", :text=>"漢字 @ < > lorem ipsum")
+    assert(r.ok?, "response should be ok")
+    assert_equal(r["text"]["_content"], "漢字 @ < > lorem ipsum", "CJKV, HTML entities and other characters should be properly URL-escaped")
+  end
+  
   
   def test_default_settings
     FlickrInvocation.default_api_key 'bf67a649fffb210651334a09b92df02e'
@@ -41,10 +50,9 @@ class ObjectiveFlickrTest < Test::Unit::TestCase
   end
   
   def test_deprecated_photo_helpers    
-    f = FlickrInvocation.new
     params = {:server=>1234, :id=>5678, :secret=>90, :farm=>321}
-    assert_equal(f.photo_url(params), "http://farm321.static.flickr.com/1234/5678_90.jpg", "URL helper failed")
-    uid = f.photo_div_id(params)
+    assert_equal(@f.photo_url(params), "http://farm321.static.flickr.com/1234/5678_90.jpg", "URL helper failed")
+    uid = @f.photo_div_id(params)
     assert_equal(uid, "photo-1234-5678-90-321--jpg", "UID failed")
   end
   
@@ -56,22 +64,26 @@ class ObjectiveFlickrTest < Test::Unit::TestCase
     assert_equal(FlickrPhoto.url_from_hash(params), "http://farm321.static.flickr.com/1234/5678_90.jpg", "URL helper failed")
     params[:farm] = nil
     
-    uid = FlickrPhoto.unique_id_from_hash(params, 'blah')
+    uid = FlickrPhoto.element_id_from_hash(params, 'blah')
     assert_equal(uid, "blah-1234-5678-90---jpg", "UID failed")
     
     params[:farm] = "321"
     params[:size] = 'b'
-    uid = FlickrPhoto.unique_id_from_hash(params, 'blah')
+    uid = FlickrPhoto.element_id_from_hash(params, 'blah')
     assert_equal(uid, "blah-1234-5678-90-321-b-jpg", "UID failed")
 
     
-    assert_equal(FlickrPhoto.url_from_unique_id(uid), "http://farm321.static.flickr.com/1234/5678_90_b.jpg", "URL helper failed")    
+    assert_equal(FlickrPhoto.url_from_element_id(uid), "http://farm321.static.flickr.com/1234/5678_90_b.jpg", "URL helper failed")    
     
     params[:type] = 'jpg'
-    h = FlickrPhoto.hash_from_unique_id(uid)
-    assert_equal(h, params, "hash_from_unique_id failed")
+    h = FlickrPhoto.hash_from_element_id(uid)
+    assert_equal(h, params, "hash_from_element_id failed")
 
   end 
   
-  
+  def test_buddy_icons
+    assert_equal FlickrPhoto.buddy_icon_url("12345678@N1234"), "http://www.flickr.com/images/buddyicon.jpg"
+    assert_equal FlickrPhoto.buddy_icon_url("12345678@N1234", "92"), "http://static.flickr.com/92/buddyicons/12345678@N1234.jpg"
+    assert_equal FlickrPhoto.buddy_icon_url("12345678@N1234", "92", "1"), "http://farm1.static.flickr.com/92/buddyicons/12345678@N1234.jpg"
+  end
 end
