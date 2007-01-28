@@ -47,8 +47,12 @@ class FlickrInvocation
   # call will automatically be signed, and the call will be 
   # treated by Flickr as an authenticated call
   def call(method, params=nil)
-    url = method_url(method, params)
-    rsp = FlickrResponse.new Net::HTTP.get(URI.parse(url))
+    if params && params[:post]
+      rsp = FlickrResponse.new Net::HTTP.post_form(URI.parse(REST_ENDPOINT), post_params(method, params)).body
+    else
+      url = method_url(method, params)
+      rsp = FlickrResponse.new Net::HTTP.get(URI.parse(url))
+    end
     
     if @options[:raise_exception_on_error] && rsp.error?
       raise RuntimeError, rsp
@@ -61,9 +65,18 @@ class FlickrInvocation
   # to complete the Flickr authentication process (Flickr then uses
   # the callback address you've set previously to pass the
   # authentication frob back to your web app)
-  def login_url(permission)
-    sig = api_sig(:api_key => @api_key, :perms => permission.to_s)
-    url = "#{AUTH_ENDPOINT}?api_key=#{@api_key}&perms=#{permission}&api_sig=#{sig}"
+  #
+  # New in 0.9.5: frob parameter for desktop applications
+  # http://www.flickr.com/services/api/auth.howto.desktop.html
+  def login_url(permission, frob=nil)
+    if frob
+      sig = api_sig(:api_key => @api_key, :perms => permission.to_s, :frob=> frob)
+      url = "#{AUTH_ENDPOINT}?api_key=#{@api_key}&perms=#{permission}&frob=#{frob}&api_sig=#{sig}"
+    else
+      sig = api_sig(:api_key => @api_key, :perms => permission.to_s)
+      url = "#{AUTH_ENDPOINT}?api_key=#{@api_key}&perms=#{permission}&api_sig=#{sig}"
+    end
+    url
   end
     
   # DEPRECATED--Use FlickrPhoto.url_from_hash(params)
@@ -103,12 +116,39 @@ class FlickrInvocation
   
   private
   def method_url(method, params=nil)
+    url = "#{REST_ENDPOINT}?api_key=#{@api_key}&method=#{method}"
     p = params || {}
+    sign_params(method, p)
     
+    p.keys.each { |k| url += "&#{k.to_s}=#{CGI.escape(p[k].to_s)}" }
+    url
+  end
+
+  def post_params(method, params)
+    p = params ? params.clone : {}
+    p.delete :post
+    sign_params(method, p)
+    
+    # since we're using Net::HTTP.post_form to do the call,
+    # CGI escape is already done for us, so, no escape here
+    # p.keys.each { |k| p[k] = CGI.escape(p[k].to_s) }    
+    p
+  end
+  
+  def api_sig(params)
+    sigstr = @shared_secret
+    params.keys.sort { |x, y| x.to_s <=> y.to_s }.each do |k|
+      sigstr += k.to_s
+      sigstr += params[k].to_s
+    end
+    Digest::MD5.hexdigest(sigstr)
+  end
+  
+  # we add json parameter here, telling Flickr we want json!
+  def sign_params(method, p)
     p[:format] = 'json'
     p[:nojsoncallback] = 1
     
-    url = "#{REST_ENDPOINT}?api_key=#{@api_key}&method=#{method}"
     if p[:auth] || p["auth"] || p[:auth_token] || p["auth_token"]
       p.delete(:auth)
       p.delete("auth")
@@ -118,17 +158,6 @@ class FlickrInvocation
       p["api_sig"] = api_sig(sigp)
     end
     
-    p.keys.each { |k| url += "&#{k.to_s}=#{CGI.escape(p[k].to_s)}" }
-    url
-  end
-  
-  private
-  def api_sig(params)
-    sigstr = @shared_secret
-    params.keys.sort { |x, y| x.to_s <=> y.to_s }.each do |k|
-      sigstr += k.to_s
-      sigstr += params[k].to_s
-    end
-    Digest::MD5.hexdigest(sigstr)
+    p
   end
 end

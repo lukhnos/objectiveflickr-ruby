@@ -1,4 +1,10 @@
 2007-01-29 (0.9.5):
+    * HTTP POST support! Finally ObjectiveFlickr supports Flickr methods
+      that require an HTTP POST request. They are methods whose names
+	  contain words like "set" or "delete". URL escape has been tested,
+	  so this part of the library is safe for HTML entities and UTF-8
+	  characters.
+
 	* Supports Flickr's new photo URL scheme (announced January 19, 2007):
 	  http://www.flickr.com/services/api/misc.urls.html
 	
@@ -16,9 +22,6 @@
 	  For more information on flickr.photo.search, please refer to 
 	  http://www.flickr.com/services/api/flickr.photos.search.html
 	  
-	* :type key in module FlickrPhoto's helper methods is now
-	  deprecated, replaced by :format for the sake of naming consistency.
-	
 	* The change of Flickr's photo URL scheme has the implication that
 	  url_from_element_id, hash_from_element_id and element_id_from_hash
 	  will not work correctly with original photos. I'm still 
@@ -26,6 +29,9 @@
 	  values in the element_id scheme, but I'm reluctant since it seems
 	  that Flickr is doing its due to protect users' photos, which I
 	  think is the right thing to do.
+
+	* :type key in module FlickrPhoto's helper methods is now
+	  deprecated, replaced by :format for the sake of naming consistency.
 
 	
 2007-01-08 (0.9.4):
@@ -92,7 +98,7 @@
     * You no longer need to set :auth=>true if you already supply
       an :auth_token parameter when you make Flickr method calls.
       Since :auth_token always implies that the call must be
-      authenticated, ObjectiveFlickr is happy to save a few strokes
+      authenticated, ObjectiveFlickr is happy to save a few keystrokes
       for you. :)
 	
 
