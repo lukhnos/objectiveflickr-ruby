@@ -31,7 +31,14 @@ module FlickrPhoto
   end
 
   # This utility method returns the URL of a Flickr photo using
-  # the keys :farm, :server, :id, :secret, :size and :type  
+  # the keys :farm, :server, :id, :secret, :size and :format
+  #
+  # The :type key that is used in ObjectiveFlickr prior to 0.9.5 
+  # is deprecated. It is still supported, but support will be removed
+  # in 0.9.6.
+  #
+  # Since January 2007, Flickr requires API libraries to support
+  # :originalsecret and :originalformat
   def self.url_from_hash(params)
     self.url_from_normalized_hash(self.normalize_parameter(params))
   end
@@ -42,13 +49,13 @@ module FlickrPhoto
   # use in a div
   def self.element_id_from_hash(params, prefix='photo')
     p = self.normalize_parameter(params)
-    [prefix, p[:server], p[:id], p[:secret], p[:farm], p[:size], p[:type]].join("-")    
+    [prefix, p[:server], p[:id], p[:secret], p[:farm], p[:size], p[:format]].join("-")    
   end
 
   # This utility method breaks apart the photo id into Flickr photo
   # keys and returns the photo URL  
   def self.url_from_element_id(uid)
-    self.url_from_normalized_hash(self.hash_from_unique_id(uid))
+    self.url_from_normalized_hash(self.hash_from_element_id(uid))
   end
 
   # This utility method breaks apart the photo id into Flickr photo
@@ -59,7 +66,7 @@ module FlickrPhoto
     p = uid.split("-")
     {
       :server=>p[1], :id=>p[2], :secret=>p[3],
-      :farm=>p[4], :size=>p[5], :type=>p[6]
+      :farm=>p[4], :size=>p[5], :format=>p[6],
     }
   end
 
@@ -80,21 +87,39 @@ module FlickrPhoto
 
   private
   def self.url_from_normalized_hash(p)
-    url = "#{photo_url_base(p[:farm])}/#{p[:server]}/#{p[:id]}_#{p[:secret]}"
-    url += "_#{p[:size]}" if p[:size].length > 0
-    url += ".#{p[:type]}"
+    if p[:size]=="o" && p[:originalformat] && p[:originalsecret]
+      url = "#{photo_url_base(p[:farm])}/#{p[:server]}/#{p[:id]}_#{p[:originalsecret]}"
+      url += "_o"
+      url += ".#{p[:originalformat]}"      
+    else
+      url = "#{photo_url_base(p[:farm])}/#{p[:server]}/#{p[:id]}_#{p[:secret]}"
+      url += "_#{p[:size]}" if p[:size].length > 0
+      url += ".#{p[:format]}"
+    end
   end
 
   private
   def self.normalize_parameter(params)
-    {
+    h = {
       :farm => (params[:farm] || params["farm"] || "").to_s,
       :server => (params[:server] || params["server"] || "").to_s,
       :id => (params[:id] || params["id"] || "").to_s,
       :secret => (params[:secret] || params["secret"] || "").to_s,
       :size => (params[:size] || params["size"] || "").to_s,
-      :type => (params[:type] || params["type"] || "jpg").to_s
+      :format => (params[:format] || params["format"] || params[:type] || params["type"] || "jpg").to_s
     }
+    
+    os = params[:originalsecret] || params["originalsecret"]
+    if os
+      h[:originalsecret] = os.to_s
+    end
+    
+    of = params[:originalformat] || params["originalformat"]
+    if of
+      h[:originalformat] = of.to_s
+    end
+    
+    h
   end
   
   private

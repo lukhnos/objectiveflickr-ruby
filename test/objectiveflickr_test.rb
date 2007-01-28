@@ -21,9 +21,10 @@ class ObjectiveFlickrTest < Test::Unit::TestCase
   end
   
   def test_echo_escaped_characters
-    r = @f.call("flickr.test.echo", :text=>"漢字 @ < > lorem ipsum")
+    r = @f.call("flickr.test.echo", :text=>"漢字 @ < > & lorem ipsum")
+    puts r.to_yaml
     assert(r.ok?, "response should be ok")
-    assert_equal(r["text"]["_content"], "漢字 @ < > lorem ipsum", "CJKV, HTML entities and other characters should be properly URL-escaped")
+    assert_equal("漢字 @ < > & lorem ipsum", r["text"]["_content"], "CJKV, HTML entities and other characters should be properly URL-escaped")
   end
   
   
@@ -75,9 +76,18 @@ class ObjectiveFlickrTest < Test::Unit::TestCase
     
     assert_equal(FlickrPhoto.url_from_element_id(uid), "http://farm321.static.flickr.com/1234/5678_90_b.jpg", "URL helper failed")    
     
-    params[:type] = 'jpg'
+    # type is deprecated
+    # params[:type] = 'jpg'
+    
+    params[:format] = 'jpg'
     h = FlickrPhoto.hash_from_element_id(uid)
     assert_equal(h, params, "hash_from_element_id failed")
+
+
+    params[:originalformat] = 'png'
+    params[:originalsecret] = '9999'
+    params[:size] = 'o'
+    assert_equal("http://farm321.static.flickr.com/1234/5678_9999_o.png", FlickrPhoto.url_from_hash(params), "URL helper failed")
 
   end 
   

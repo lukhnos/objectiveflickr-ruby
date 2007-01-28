@@ -1,11 +1,41 @@
+2007-01-29 (0.9.5):
+	* Supports Flickr's new photo URL scheme (announced January 19, 2007):
+	  http://www.flickr.com/services/api/misc.urls.html
+	
+	  Flickr now requires API users to use the "originalsecret" and
+	  "originalformat" to retrieve the original photo--when it is
+	  accessible to the request maker (auth'ed or not) at all.
+	
+	  In order for this to work, you must supply an extra "extras"
+	  parameter, set to "original_format", when you're calling
+	  flickr.photo.search (the originalsecret will be returned back
+	  along the way), for example:
+	
+	      f.call("flickr.photo.search", ..., :extras=>"original_format")
+	
+	  For more information on flickr.photo.search, please refer to 
+	  http://www.flickr.com/services/api/flickr.photos.search.html
+	  
+	* :type key in module FlickrPhoto's helper methods is now
+	  deprecated, replaced by :format for the sake of naming consistency.
+	
+	* The change of Flickr's photo URL scheme has the implication that
+	  url_from_element_id, hash_from_element_id and element_id_from_hash
+	  will not work correctly with original photos. I'm still 
+	  considering encoding the extra originalformat and originalsecret
+	  values in the element_id scheme, but I'm reluctant since it seems
+	  that Flickr is doing its due to protect users' photos, which I
+	  think is the right thing to do.
+
+
 2007-01-08 (0.9.4):
-    * Fixed a serious defect where API parameters, such as search text, must 
-      be URL-escaped. There's a catch if you tried previously to use CGI.escape
-      to work around, though: Flickr's API signature string must not be *escaped*
-      before the string is MD5-checksummed.
+    * Fixed a serious defect where API parameters, such as search text, 
+      must be URL-escaped. There's a catch if you tried previously to use 
+      CGI.escape to work around, though: Flickr's API signature string must
+      not be *escaped* before the string is MD5-checksummed.
       
-      Now everything should work fine. Pass any CJKV or HTML entity characters
-      to see how it goes!
+      Now everything should work fine. Pass a few CJKV or HTML entity 
+      characters to see how it goes!
 
 
 2007-01-04 (0.9.3):
