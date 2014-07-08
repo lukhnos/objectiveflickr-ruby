@@ -1,6 +1,11 @@
 README for objectiveflickr
 ==========================
 
+NOTE: This is the revived source repository for the Ruby gem at
+https://rubygems.org/gems/objectiveflickr. The library is no longer maintained
+and the code cannot be used with the current Flickr API as it lacks HTTPS
+support.
+
 objectiveflickr is a minimalistic Flickr API library that uses REST-style
 calls and receives JSON response blocks, resulting in very concise code.
 Named so in order to echo another Flickr library of mine, under the same name,
